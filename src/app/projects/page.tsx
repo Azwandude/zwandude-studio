@@ -15,7 +15,7 @@ const demoProjects: Project[] = [
   {
     id: '1', title: 'Penang Vlog', slug: 'penang-vlog',
     category: 'Videography', coverImage: '', media: 'https://www.youtube.com/watch?v=mngh1o5YSbw',
-    description: 'A Vlog series that captures the essence of Penang\'s culture, food, and lifestyle for a corporate client.',
+    description: 'A Vlog series that captures the Scenery essence of Penang\'s culture, food, and lifestyle for a corporate client.',
     client: 'Content Creator Client', role: 'Videographer & Director', date: '2025-04-01',
     tags: ['corporate', 'event'], featured: true, status: 'published',
   },
