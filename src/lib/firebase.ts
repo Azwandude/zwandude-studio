@@ -2,8 +2,10 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { getStorage, connectStorageEmulator  } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
+
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -28,3 +30,8 @@ export const storage = getStorage(app);
 
 // Analytics only runs in the browser; importing this module during SSR is safe.
 export const analytics = typeof window === "undefined" ? null : getAnalytics(app);
+
+// ...
+
+storage.maxUploadRetryTime = 15000;
+storage.maxOperationRetryTime = 15000;

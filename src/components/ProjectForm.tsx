@@ -69,16 +69,19 @@ export default function ProjectForm({ initialData, mode }: ProjectFormProps) {
   };
 
   const uploadFile = async (file: File, path: string): Promise<string> => {
+    
     return new Promise((resolve, reject) => {
       const fileRef = storageRef(storage, path);
       const task = uploadBytesResumable(fileRef, file);
       task.on(
         'state_changed',
         (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        reject,
+        (err) => { console.error('Upload error:', err.code, err.message); reject(err); },
+        
         async () => {
           const url = await getDownloadURL(task.snapshot.ref);
           resolve(url);
+          
         }
       );
     });
@@ -91,6 +94,7 @@ export default function ProjectForm({ initialData, mode }: ProjectFormProps) {
     setUploadProgress(0);
     try {
       const url = await uploadFile(file, `covers/${Date.now()}_${file.name}`);
+      
       set('coverImage', url);
       toast.success('Cover image uploaded!');
     } catch {
