@@ -7,52 +7,7 @@ import Link from 'next/link';
 import { gsap } from 'gsap';
 import { ArrowLeft, ArrowRight, Calendar, User, Building2, Tag } from 'lucide-react';
 import type { Project } from '@/types';
-
-// Demo data
-const demoProjects: Project[] = [
-  {
-    id: '1', title: 'Penang Vlog', slug: 'penang-vlog',
-    category: 'Videography', coverImage: '', media: 'https://www.youtube.com/watch?v=mngh1o5YSbw',
-    description: 'A cinematic and energetic Vlog series that captures the essence of Penang\'s culture, food, and lifestyle for a corporate client. The series was designed to engage viewers with dynamic storytelling, showcasing the vibrant street life, local cuisine, and cultural landmarks of Penang.',
-    client: 'Corporate Client (NDA)', role: 'Videographer & Director', date: '2025-04-01',
-    tags: ['corporate', 'event', 'festive'], featured: true, status: 'published',
-  },
-  {
-    id: '2', title: 'Podcast Documentary', slug: 'podcast-documentary',
-    category: 'Videography', coverImage: '', media: 'https://www.youtube.com/watch?v=kc_SXf7etUE',
-    description: 'A sad podcast that capture the truth of retirement of acting and the struggles behind the scenes of a famous actor in Malaysia Wan Maimunah. The documentary-style podcast explores the emotional journey of the actor, highlighting the challenges faced in the entertainment industry and the personal sacrifices made throughout their career.',
-    client: 'Private Client', role: 'Videographer & Editor', date: '2025-02-14',
-    tags: ['wedding', 'cinematic', 'emotional'], featured: true, status: 'published',
-  },
-  {
-    id: '3', title: 'Convocation | Long call ', slug: 'convocation-long-call',
-    category: 'Editing', coverImage: '', media: 'https://www.youtube.com/watch?v=w49l2pKyKwY',
-    description: 'Multi-camera podcast editing for a growing local creator — complete with color grading, lower thirds, intro/outro animations, and audio mastering. Delivered a 12-episode series ready for YouTube and Spotify.',
-    client: 'Local Creator', role: 'Video Editor', date: '2025-01-10',
-    tags: ['podcast', 'editing', 'post-production'], featured: true, status: 'published',
-  },
-  {
-    id: '4', title: 'Brand Ambassador Feature', slug: 'brand-ambassador-feature',
-    category: 'Talent', coverImage: '',
-    description: 'On-screen hosting and presenting for a tech product launch event. The campaign required a presenter who could communicate technical product features in an engaging, approachable way — bridging the gap between the engineering team\'s language and the consumer audience.',
-    client: 'Tech Brand', role: 'Host & Presenter', date: '2024-12-01',
-    tags: ['hosting', 'presenting', 'tech'], featured: false, status: 'published',
-  },
-  {
-    id: '5', title: 'Travel Documentary Short', slug: 'travel-documentary-short',
-    category: 'Videography', coverImage: '', media: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    description: 'A short-form travel documentary exploring hidden gems across Peninsular Malaysia. Shot entirely handheld with intentional verité style to maintain authenticity and immersion.',
-    role: 'Videographer & Editor', date: '2024-10-20',
-    tags: ['travel', 'documentary', 'Malaysia'], featured: false, status: 'published',
-  },
-  {
-    id: '6', title: 'Social Media Content Series', slug: 'social-media-content-series',
-    category: 'Editing', coverImage: '',
-    description: 'A 10-part short-form video series optimized for Instagram Reels and TikTok for a Malaysian fashion brand. Each episode was edited for maximum retention with pattern interrupts, subtitles, and platform-specific aspect ratios.',
-    client: 'Fashion Brand', role: 'Video Editor', date: '2024-09-15',
-    tags: ['social media', 'reels', 'fashion'], featured: false, status: 'published',
-  },
-];
+import { getProjectBySlug, getPublishedProjects } from '@/lib/projects';
 
 function getYouTubeEmbedUrl(url: string): string {
   if (!url) return '';
@@ -77,19 +32,52 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [nextProject, setNextProject] = useState<Project | null>(null);
   const [prevProject, setPrevProject] = useState<Project | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    const idx = demoProjects.findIndex((p) => p.slug === slug);
-    if (idx === -1) {
-      router.push('/projects');
-      return;
+    let active = true;
+
+    async function load() {
+      try {
+        const current = await getProjectBySlug(slug);
+        if (!active) return;
+
+        if (!current) {
+          router.push('/projects');
+          return;
+        }
+        setProject(current);
+
+        // Prev/next is optional, so don't fail the page if it errors
+        try {
+          const all = await getPublishedProjects();
+          if (!active) return;
+          const idx = all.findIndex((p) => p.slug === slug);
+          if (all.length > 1 && idx !== -1) {
+            setNextProject(all[(idx + 1) % all.length]);
+            setPrevProject(all[(idx - 1 + all.length) % all.length]);
+          }
+        } catch (err) {
+          console.warn('Could not load prev/next projects:', err);
+        }
+      } catch (err) {
+        console.error('Failed to load project:', err);
+        if (active) setLoadError(err instanceof Error ? err.message : 'Failed to load project.');
+      }
     }
-    setProject(demoProjects[idx]);
-    setNextProject(demoProjects[idx + 1] || demoProjects[0]);
-    setPrevProject(demoProjects[idx - 1] || demoProjects[demoProjects.length - 1]);
-  }, [slug, router]);
 
+    load();
+    return () => { active = false; };
+  }, [slug, router]);
+    if (loadError) {
+    return (
+      <div style={{ paddingTop: 'var(--nav-height)', minHeight: '100vh' }} className="container-wide py-20">
+        <p style={{ color: 'var(--accent)' }}>Error: {loadError}</p>
+      </div>
+    );
+  }
   useEffect(() => {
+    
     if (!project) return;
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ delay: 0.1 });

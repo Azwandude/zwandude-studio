@@ -44,11 +44,12 @@ function fromFirestore(id: string, data: Record<string, unknown>): Project {
 export async function getPublishedProjects(): Promise<Project[]> {
   const q = query(
     collection(db, COLLECTION),
-    where('status', '==', 'published'),
-    orderBy('date', 'desc')
+    where('status', '==', 'published')
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => fromFirestore(d.id, d.data() as Record<string, unknown>));
+  return snap.docs
+    .map((d) => fromFirestore(d.id, d.data() as Record<string, unknown>))
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
 
 // Public: get published projects by category
