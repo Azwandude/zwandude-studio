@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Download, Code2, Camera, Video, Mic2, Award } from 'lucide-react';
+import Image from 'next/image';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -12,11 +13,11 @@ const tools = [
   { name: 'Adobe Premiere Pro', category: 'Editing' },
   { name: 'DaVinci Resolve', category: 'Color & Edit' },
   { name: 'Adobe After Effects', category: 'Motion Graphics' },
-  { name: 'Adobe Audition', category: 'Audio' },
-  { name: 'Sony FX3', category: 'Camera' },
+  { name: 'Davinvi Studio', category: 'Audio' },
+  { name: 'Sony ZVE-10', category: 'Camera' },
   { name: 'DJI Ronin', category: 'Stabilizer' },
   { name: 'Aputure Lighting', category: 'Lighting' },
-  { name: 'Rode Wireless GO', category: 'Audio' },
+  { name: 'DJI Mic Mini', category: 'Audio' },
 ];
 
 const skills = [
@@ -129,7 +130,13 @@ export default function AboutPage() {
                   className="font-display text-center select-none"
                   style={{ fontSize: 'clamp(8rem, 20vw, 14rem)', color: 'rgba(232,56,26,0.15)', letterSpacing: '-0.05em' }}
                 >
-                  ZS
+                  <Image
+  src="/media-animal-videos-05ba4263.png"
+  alt="Azwan"
+  fill
+  sizes="(max-width: 768px) 100vw, 50vw"
+  className="object-cover"
+/>
                 </div>
                 <div className="absolute bottom-6 left-6 right-6">
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Azwan · Zwandude Studio · Malaysia</p>
