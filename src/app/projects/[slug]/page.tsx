@@ -34,41 +34,33 @@ export default function ProjectDetailPage() {
   const [prevProject, setPrevProject] = useState<Project | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  // inside the component, replace the first useEffect:
+const [notFound, setNotFound] = useState(false);
 
-    async function load() {
-      try {
-        const current = await getProjectBySlug(slug);
-        if (!active) return;
-
-        if (!current) {
-          router.push('/projects');
-          return;
-        }
-        setProject(current);
-
-        // Prev/next is optional, so don't fail the page if it errors
-        try {
-          const all = await getPublishedProjects();
-          if (!active) return;
-          const idx = all.findIndex((p) => p.slug === slug);
-          if (all.length > 1 && idx !== -1) {
-            setNextProject(all[(idx + 1) % all.length]);
-            setPrevProject(all[(idx - 1 + all.length) % all.length]);
-          }
-        } catch (err) {
-          console.warn('Could not load prev/next projects:', err);
-        }
-      } catch (err) {
-        console.error('Failed to load project:', err);
-        if (active) setLoadError(err instanceof Error ? err.message : 'Failed to load project.');
+useEffect(() => {
+  let active = true;
+  getPublishedProjects()
+    .then((all) => {
+      if (!active) return;
+      const idx = all.findIndex((p) => p.slug === slug);
+      if (idx === -1) {
+        setNotFound(true);
+        return;
       }
-    }
+      setProject(all[idx]);
+      setNextProject(all[idx + 1] || all[0]);
+      setPrevProject(all[idx - 1] || all[all.length - 1]);
+    })
+    .catch((err) => {
+      console.error(err);
+      if (active) setNotFound(true);
+    });
+  return () => { active = false; };
+}, [slug]);
 
-    load();
-    return () => { active = false; };
-  }, [slug, router]);
+useEffect(() => {
+  if (notFound) router.push('/projects');
+}, [notFound, router]);
     if (loadError) {
     return (
       <div style={{ paddingTop: 'var(--nav-height)', minHeight: '100vh' }} className="container-wide py-20">
