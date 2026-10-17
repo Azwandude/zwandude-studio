@@ -9,14 +9,33 @@ import { ArrowLeft, ArrowRight, Calendar, User, Building2, Tag } from 'lucide-re
 import type { Project } from '@/types';
 import { getProjectBySlug, getPublishedProjects } from '@/lib/projects';
 
-function getYouTubeEmbedUrl(url: string): string {
-  if (!url) return '';
-  if (url.includes('embed/')) return url;
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  if (match) return `https://www.youtube.com/embed/${match[1]}`;
+function parseVideoUrl(url: string): { embedUrl: string; isShort: boolean } {
+  if (!url) return { embedUrl: '', isShort: false };
+
+  // Already an embed link
+  if (url.includes('youtube.com/embed/') || url.includes('player.vimeo.com/')) {
+    return { embedUrl: url, isShort: false };
+  }
+
+  // YouTube Shorts
+  const shortsMatch = url.match(/youtube\.com\/shorts\/([\w-]+)/);
+  if (shortsMatch) {
+    return { embedUrl: `https://www.youtube.com/embed/${shortsMatch[1]}`, isShort: true };
+  }
+
+  // Normal YouTube: watch?v=, youtu.be/, live/
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/|youtube\.com\/live\/)([\w-]+)/);
+  if (ytMatch) {
+    return { embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}`, isShort: false };
+  }
+
+  // Vimeo
   const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-  return url;
+  if (vimeoMatch) {
+    return { embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`, isShort: false };
+  }
+
+  return { embedUrl: url, isShort: false };
 }
 
 export default function ProjectDetailPage() {
@@ -90,8 +109,9 @@ useEffect(() => {
     );
   }
 
-  const embedUrl = project.media ? getYouTubeEmbedUrl(project.media) : '';
-
+const { embedUrl, isShort } = project.media
+  ? parseVideoUrl(project.media)
+  : { embedUrl: '', isShort: false };
   return (
     <div ref={pageRef} style={{ paddingTop: 'var(--nav-height)' }}>
       {/* ── HERO ── */}
@@ -154,17 +174,32 @@ useEffect(() => {
 
             {/* Video embed */}
             {embedUrl && (
-              <div className="content-item">
-                <div className="video-container rounded-none overflow-hidden" style={{ borderRadius: 0 }}>
-                  <iframe
-                    src={embedUrl}
-                    title={project.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              </div>
-            )}
+  <div className="content-item">
+    {isShort ? (
+      <div
+        className="mx-auto overflow-hidden"
+        style={{ aspectRatio: '9 / 16', maxWidth: '360px', background: '#000' }}
+      >
+        <iframe
+          src={embedUrl}
+          title={project.title}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    ) : (
+      <div className="video-container rounded-none overflow-hidden" style={{ borderRadius: 0 }}>
+        <iframe
+          src={embedUrl}
+          title={project.title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    )}
+  </div>
+)}
 
             {/* Description */}
             <div className="content-item space-y-4">
