@@ -39,7 +39,27 @@ interface ProjectFormProps {
 
 export default function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const router = useRouter();
-  const [form, setForm] = useState<FormData>(initialData ? { ...emptyForm, ...initialData } : emptyForm);
+  const [form, setForm] = useState<FormData>(() => {
+    if (!initialData) return { ...emptyForm };
+
+    // Copy only editable fields. This keeps Firestore metadata out of form state
+    // and gives optional fields safe values when older documents omit them.
+    return {
+      title: initialData.title,
+      slug: initialData.slug,
+      category: initialData.category,
+      coverImage: initialData.coverImage,
+      media: initialData.media ?? '',
+      gallery: initialData.gallery ?? [],
+      description: initialData.description,
+      client: initialData.client ?? '',
+      role: initialData.role,
+      date: initialData.date,
+      tags: initialData.tags ?? [],
+      featured: initialData.featured,
+      status: initialData.status,
+    };
+  });
   const [tagInput, setTagInput] = useState('');
   const [uploading, setUploading] = useState<'cover' | 'gallery' | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -140,11 +160,27 @@ export default function ProjectForm({ initialData, mode }: ProjectFormProps) {
         await createProject(form);
         toast.success('Project created!');
       } else if (initialData?.id) {
-        await updateProject(initialData.id, form);
+        const updateData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
+          title: form.title,
+          slug: form.slug,
+          category: form.category,
+          coverImage: form.coverImage,
+          media: form.media ?? '',
+          gallery: form.gallery ?? [],
+          description: form.description,
+          client: form.client ?? '',
+          role: form.role,
+          date: form.date,
+          tags: form.tags ?? [],
+          featured: form.featured,
+          status: form.status,
+        };
+        await updateProject(initialData.id, updateData);
         toast.success('Project updated!');
       }
       router.push('/studio/dashboard');
-    } catch {
+    } catch (error) {
+      console.error('Failed to save project:', error);
       toast.error('Failed to save project. Please try again.');
     } finally {
       setSaving(false);

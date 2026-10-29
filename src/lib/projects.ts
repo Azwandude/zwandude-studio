@@ -115,9 +115,15 @@ export async function createProject(data: Omit<Project, 'id' | 'createdAt' | 'up
 }
 
 // Admin: update project
-export async function updateProject(id: string, data: Partial<Omit<Project, 'id'>>): Promise<void> {
+export async function updateProject(
+  id: string,
+  data: Partial<Omit<Project, 'id' | 'createdAt' | 'updatedAt'>>
+): Promise<void> {
   const ref = doc(db, COLLECTION, id);
-  await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
+  const definedData = Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined)
+  );
+  await updateDoc(ref, { ...definedData, updatedAt: serverTimestamp() });
 }
 
 // Admin: delete project
